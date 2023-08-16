@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Game Tangkap Kotak Kejutan">
+<meta name="keywords" content="game, indonesia, game kemerdekaan">
+<meta name="author" content="Yudha T. Putra">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tangkap Kotak Kejutan</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+	background-color:powderblue;
+  }
+  
+  #player {
+    position: absolute;
+    bottom: 0;
+    left: 50px;
+    width: 20px;
+    height: 20px;
+    background-color: blue;
+  }
+  
+  .box {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+  }
+  
+  #game-over-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border: 2px solid black;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+</style>
+</head>
+<body>
+<div id="player"></div>
+<div id="score">Skor: 0</div>
+<div id="game-over-popup">
+  <h2>Game Over !!!</h2>
+  <p>Skor anda : <span id="final-score"></span></p>
+  <button id="restart-button">Main Lagi</button>
+</div>
+
+<script>
+  const player = document.getElementById("player");
+  const scoreDisplay = document.getElementById("score");
+  const gameOverPopup = document.getElementById("game-over-popup");
+  const finalScoreSpan = document.getElementById("final-score");
+  const restartButton = document.getElementById("restart-button");
+  const playerSpeed = 5;
+  
+  let playerLeft = 50;
+  let score = 0;
+  let gameInterval;
+  let gameSupriseInterval;
+  let gameOver = false;
+  
+  function movePlayer(direction) {
+    if (direction === "left") {
+      playerLeft -= playerSpeed;
+    } else if (direction === "right") {
+      playerLeft += playerSpeed;
+    }
+    player.style.left = playerLeft + "px";
+  }
+  
+  function createBox() {
+	if (gameOver) return;
+	const box = document.createElement("div");
+		box.className = "box";
+		box.innerHTML = '<svg style="color: red" xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-box-seam" viewBox="0 0 50 50"> <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z" fill="red"></path> </svg>';
+		box.style.left = Math.random() * window.innerWidth + "px";
+		document.body.appendChild(box);
+	  
+		const boxMoveInterval = setInterval(() => {
+		  const boxTop = parseInt(getComputedStyle(box).top);
+		  if (boxTop > window.innerHeight) {
+			clearInterval(boxMoveInterval);
+			box.remove();
+		  } else {
+			box.style.top = boxTop + 5 + "px";
+			if (checkCollision(player, box)) {
+			  clearInterval(boxMoveInterval);
+			  box.remove();
+			  updateScore(100);
+			}
+		  }
+		}, 50);
+  }
+
+  function createSupriseBox() {
+	if (gameOver) return;
+	const box = document.createElement("div");
+		box.className = "box";
+		box.innerHTML = '<svg style="color: white" xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-box-seam" viewBox="0 0 50 50"> <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z" fill="white"></path> </svg>';
+		box.style.left = Math.random() * window.innerWidth + "px";
+		document.body.appendChild(box);
+	  
+		const boxMoveInterval = setInterval(() => {
+		  const boxTop = parseInt(getComputedStyle(box).top);
+		  if (boxTop > window.innerHeight) {
+			clearInterval(boxMoveInterval);
+			box.remove();
+		  } else {
+			box.style.top = boxTop + 5 + "px";
+			if (checkCollision(player, box)) {
+				const randomNumber = Math.floor(Math.random() * 5) + 1;
+				if(randomNumber == 1){
+					endGame();
+				}else{
+				  clearInterval(boxMoveInterval);
+				  box.remove();
+				  updateScore(5000);
+				}
+			}
+		  }
+		}, 50);
+  }
+  
+  function checkCollision(player, box) {
+    const playerRect = player.getBoundingClientRect();
+    const boxRect = box.getBoundingClientRect();
+    return (
+      playerRect.left < boxRect.right &&
+      playerRect.right > boxRect.left &&
+      playerRect.top < boxRect.bottom &&
+      playerRect.bottom > boxRect.top
+    );
+  }
+  
+  function updateScore(newscore) {
+	score = score + newscore;
+	scoreDisplay.textContent = "Skor: " + score;
+  }
+  
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft" && playerLeft > 0) {
+      movePlayer("left");
+    } else if (event.key === "ArrowRight" && playerLeft < window.innerWidth - 50) {
+      movePlayer("right");
+    }
+  });
+  
+  function startGame() {
+	gameOverPopup.style.display = "none";
+    playerLeft = 50;
+    score = 0;
+    scoreDisplay.textContent = "Skor: 0";
+    gameOver = false;
+    gameInterval = setInterval(createBox, 2000);
+	gameSupriseInterval = setInterval(createSupriseBox, 8000);
+    boxInterval = setInterval(() => {
+      if (!gameOver) {
+        createBox();
+		createSupriseBox();
+      }
+    }, Math.random() * 1500 + 500);
+  }
+  
+  function endGame() {
+    gameOver = true;
+    clearInterval(gameInterval);
+	clearInterval(gameSupriseInterval);
+    finalScoreSpan.textContent = score;
+    gameOverPopup.style.display = "block";
+  }
+  
+  restartButton.addEventListener("click", () => {
+    startGame();
+  });
+
+  startGame();
+</script>
+</body>
+</html>
